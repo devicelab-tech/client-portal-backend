@@ -9,7 +9,7 @@ const createProject = async (req, res) => {
         const { title, description, status, progress, client, dueDate } = req.body;
 
 
-        if (!title || !client) {
+        if (!title) {
             return res.status(400).json({
                 success: false,
                 message: "Project title and client are required",
@@ -22,7 +22,7 @@ const createProject = async (req, res) => {
             description,
             status,
             progress,
-            client,
+            client: req.user._id,
             dueDate
         })
 
@@ -49,7 +49,7 @@ const createProject = async (req, res) => {
 
 const getProjects = async (req, res) => {
     try {
-        const projects = (await Project.find({ client: req.user._id })).toSorted({ createdAt: -1 });
+        const projects = await Project.find({ client: req.user._id }).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -78,7 +78,7 @@ const getProjectById = async (req, res) => {
         const project = await Project.findById(req.params.id);
 
         if (!project) {
-            return req.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: "Project not found",
             })
@@ -105,8 +105,71 @@ const getProjectById = async (req, res) => {
     }
 }
 
+// delete project
+
+const deleteProject = async (req, res) => {
+    try {
+
+        const project = await Project.findByIdAndDelete(req.params.id);
+        if (!project) {
+            res.status(400).json({
+                success: false,
+                message: "project not found"
+            })
+        }
+        res.status(200).json({
+            success: false,
+            message: "project deleted successfully"
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+
+    }
+}
+
+
+// update project status 
+
+const updateProject = async (req, res) => {
+
+    try {
+        const { title, description, status, progress, dueDate } = req.body;
+        const updateData = { title, description, status, progress, dueDate };
+        const project = await Project.findByIdAndUpdate(req.params.id, updateData, {
+            new: true,
+            runValidators: true
+        });
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: "Project not found",
+            })
+        };
+
+
+        res.status(200).json({
+            success: true,
+            message: "project updated successfully",
+            project,
+        })
+
+
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
 module.exports = {
     createProject,
     getProjects,
-    getProjectById
+    getProjectById,
+    deleteProject,
+    updateProject
+
 }

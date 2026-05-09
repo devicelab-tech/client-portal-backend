@@ -43,14 +43,12 @@ const registerUser = async (req, res) => {
         res.status(201).json({
             success: true,
             message: "User registered successfully",
-            token,
-            message: "dont send token!!!, only test",
             user,
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: `Server error ${error}`,
+            message: error.message,
 
         });
 
