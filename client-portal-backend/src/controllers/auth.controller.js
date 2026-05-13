@@ -13,8 +13,8 @@ const getMe = async (req, res) => {
 };
 
 
-const generateToken = (userId) => {
-    return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+const generateToken = (userId, userRole) => {
+    return jwt.sign({ id: userId, role: userRole, }, process.env.JWT_SECRET, {
         expiresIn: '7d',
     });
 };
@@ -39,7 +39,7 @@ const registerUser = async (req, res) => {
             companyName,
             phone,
         });
-        const token = generateToken(user._id);
+        const token = generateToken(user._id, user.role);
         res.status(201).json({
             success: true,
             message: "User registered successfully",
@@ -58,6 +58,7 @@ const registerUser = async (req, res) => {
 
 
 const loginUser = async (req, res) => {
+
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -78,14 +79,14 @@ const loginUser = async (req, res) => {
             })
         }
 
-        const token = generateToken(user._id);
+        const token = generateToken(user._id, user.role);
 
         res.status(200).json({
             succcess: true,
             message: "Login successful",
             token,
             user,
-            message: "dont send token!!!, only test"
+
         });
 
 
@@ -95,6 +96,7 @@ const loginUser = async (req, res) => {
             success: false,
             message: "Server error",
         })
+        console.log(error)
     }
 }
 

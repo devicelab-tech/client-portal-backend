@@ -16,13 +16,23 @@ const createProject = async (req, res) => {
             });
         }
 
+        if (req.user.role === "admin" && !client) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select a client",
+            })
+        }
+
+        const assignedClient = req.user.role === "admin" ? client : req.user._id;
+
+
 
         const project = await Project.create({
             title,
             description,
             status,
             progress,
-            client: req.user._id,
+            client: assignedClient,
             dueDate
         })
 
@@ -38,6 +48,7 @@ const createProject = async (req, res) => {
             message: "server error",
             error: error.message,
         })
+
     }
 
 }
@@ -47,27 +58,55 @@ const createProject = async (req, res) => {
 //@route GET /api/projects
 
 
+// const getProjects = async (req, res) => {
+//     try {
+//         const projects = await Project.find({ client: req.user._id }).sort({ createdAt: -1 });
+
+//         res.status(200).json({
+//             success: true,
+//             count: projects.length,
+//             projects,
+//         })
+
+
+//     } catch (error) {
+
+//         res.status(500).json({
+//             success: false,
+//             message: "server error",
+//             error: error.message,
+//         })
+
+//     }
+// }
+
+//SHOW PROJECTS BASED ON ROLE
 const getProjects = async (req, res) => {
     try {
-        const projects = await Project.find({ client: req.user._id }).sort({ createdAt: -1 });
+        let projects;
+
+        if (req.user.role === "admin") {
+            projects = await Project.find().populate(
+                "client",
+                "fullName email"
+            );
+        } else {
+            projects = await Project.find({
+                client: req.user.id,
+            }).populate("client", "fullName email");
+        }
 
         res.status(200).json({
             success: true,
-            count: projects.length,
             projects,
-        })
-
-
+        });
     } catch (error) {
-
         res.status(500).json({
             success: false,
-            message: "server error",
-            error: error.message,
-        })
-
+            message: error.message,
+        });
     }
-}
+};
 
 //@desc GET single project
 //@route GET /api/projects/:id
@@ -75,7 +114,7 @@ const getProjects = async (req, res) => {
 
 const getProjectById = async (req, res) => {
     try {
-        const project = await Project.findById(req.params.id);
+        const project = await Project.findById(req.params.id).populate("client", "fullName email");
 
         if (!project) {
             return res.status(404).json({
@@ -85,7 +124,8 @@ const getProjectById = async (req, res) => {
         }
 
 
-        if (project.client.toString() !== req.user._id.toString()) {
+
+        if (project.client._id.toString() !== req.user._id.toString() && req.user.role !== "admin") {
             return res.status(403).json({
                 success: false,
                 message: "Not authorized to view this project",
