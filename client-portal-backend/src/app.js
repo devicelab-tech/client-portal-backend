@@ -9,7 +9,7 @@ const app = express();
 
 app.use(cors(
     {
-        origin: "http://localhost:5173",
+        origin: "https://client-portal-frontend-1-0eqk.onrender.com",
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }
